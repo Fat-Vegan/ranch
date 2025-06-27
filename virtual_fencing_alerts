@@ -1,0 +1,36 @@
+from shapely.geometry import Point, Polygon
+import geopandas as gpd
+import smtplib
+from email.message import EmailMessage
+
+# Define virtual fence (polygon coordinates)
+fence = Polygon([(0, 0), (0, 100), (100, 100), (100, 0)])
+
+# Simulated cattle GPS data
+cattle = gpd.GeoDataFrame(
+    {'animal_id': [1, 2], 'geometry': [Point(50, 50), Point(150, 150)]},
+    geometry='geometry'
+)
+
+# Check if cattle are within fence
+cattle['in_fence'] = cattle['geometry'].apply(lambda x: fence.contains(x))
+
+# Send alert for strays
+def send_alert(animal_id, location):
+    msg = EmailMessage()
+    msg.set_content(f"Animal {animal_id} is outside fence at {location}!")
+    msg['Subject'] = 'Stray Cattle Alert'
+    msg['From'] = 'your_email@example.com'
+    msg['To'] = 'rancher@example.com'
+    # Configure SMTP server (example for Gmail)
+    # with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+    #     server.login('your_email', 'your_password')
+    #     server.send_message(msg)
+    print(f"Alert: Animal {animal_id} is outside fence at {location}")
+
+# Check and alert
+for _, row in cattle.iterrows():
+    if not row['in_fence']:
+        send_alert(row['animal_id'], row['geometry'])
+
+print(cattle)
